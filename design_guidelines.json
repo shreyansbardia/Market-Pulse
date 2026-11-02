@@ -1,0 +1,117 @@
+{
+  "project_name": "Market Pulse NSE - Indian Stock Scanner & Signal Dashboard",
+  "app_type": "dashboard",
+  "archetype": "ARCHETYPE 2: THE PERFORMANCE PRO (Tactical Obsidian Command-Center)",
+  "file_extension_note": "CRITICAL: The codebase uses JavaScript (.js and .jsx) files. Do NOT use TypeScript (.tsx/.ts) extensions.",
+  "theme": {
+    "mode": "dark",
+    "background": "#090A0F",
+    "surface": "#12141C",
+    "surface_elevated": "#1A1D28",
+    "border": "#232736",
+    "border_active": "#3B82F6",
+    "text_primary": "#F1F5F9",
+    "text_secondary": "#94A3B8",
+    "text_muted": "#64748B",
+    "accent_bullish": "#10B981",
+    "accent_bullish_bg": "rgba(16, 185, 129, 0.12)",
+    "accent_bearish": "#EF4444",
+    "accent_bearish_bg": "rgba(239, 68, 68, 0.12)",
+    "accent_neutral": "#6366F1",
+    "accent_warning": "#F59E0B",
+    "gradient_hero": "linear-gradient(180deg, rgba(18, 20, 28, 0.8) 0%, rgba(9, 10, 15, 1) 100%)"
+  },
+  "forbidden_rules": {
+    "forbidden_colors": ["#1B93A4", "#7351B7"],
+    "forbidden_fonts": ["Space Grotesk", "Inter for main titles"],
+    "forbidden_patterns": ["Center-everything layout", "Over-used cards without dense data", "Native input/select HTML elements", "Flat gray dark overlays without borders"]
+  },
+  "typography": {
+    "heading_font": "Barlow Condensed, sans-serif",
+    "body_font": "DM Sans, -apple-system, sans-serif",
+    "mono_font": "JetBrains Mono, monospace",
+    "scale": {
+      "h1": "text-3xl md:text-5xl font-extrabold tracking-tight uppercase",
+      "h2": "text-xl md:text-3xl font-bold tracking-tight uppercase",
+      "h3": "text-lg md:text-xl font-semibold tracking-normal",
+      "h4": "text-base font-semibold",
+      "body": "text-sm text-slate-300 leading-relaxed",
+      "mono_data": "font-mono text-sm tracking-wide font-medium"
+    }
+  },
+  "layout_and_navigation": {
+    "header": {
+      "type": "Sticky Command Bar",
+      "style": "bg-[#090A0F]/90 backdrop-blur-md border-b border-[#232736] px-4 py-2.5 z-40 sticky top-0 flex items-center justify-between",
+      "elements": [
+        "Brand Logo: MarketPulse NSE with animated live pulse indicator (green dot)",
+        "Indices Ticker Strip: NIFTY 50, BANK NIFTY, SENSEX, INDIA VIX with live change badge",
+        "Navigation Tabs: Pulse (Overview), Signals (Scanner), Watchlist, Market News",
+        "Market Status Badge: OPEN / CLOSED with live clock (IST)",
+        "Quick Search Command Bar (Nifty 200 stocks instant lookup)"
+      ]
+    },
+    "grid_system": "MODE B: High Density Command Grid (grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4)",
+    "responsive_rules": "Mobile-first grid collapse, drawer sliders for stock deep-dive on mobile and desktop"
+  },
+  "key_features_design": {
+    "ticker_strip": {
+      "container": "bg-[#0D0F17] border-b border-[#1E2230] py-2 px-4 overflow-x-auto flex items-center gap-6 text-xs font-mono",
+      "indices": ["NIFTY 50", "BANK NIFTY", "FINNIFTY", "SENSEX", "INDIA VIX"]
+    },
+    "market_breath_gauge": {
+      "style": "High-density ratio bar showing Advances vs Declines on Nifty 200 (e.g., 132 Bullish / 68 Bearish)",
+      "visual": "Dual-tone bar with indicator needle & market mood badge (Extremely Bullish / Neutral / Bearish)"
+    },
+    "signal_scanner_table": {
+      "style": "Dense tabular grid with sticky headers, color-coded RSI & MACD divergence alerts",
+      "filters": [
+        "Timeframe Tabs: 5m | 15m | 30m | 60m | Daily",
+        "Universe Toggle: Nifty 50 | Nifty 200",
+        "Signal Type: Bullish RSI Divergence, Bearish RSI Divergence, MACD Bullish Crossover, MACD Bearish Crossover",
+        "Sector Filter & Search bar"
+      ],
+      "columns": ["Symbol & Sector", "LTP (\u20b9)", "1D Change %", "Signal Detected", "RSI (14)", "MACD Histogram", "Volume (xAvg)", "Action/Watchlist"]
+    },
+    "sector_heatmap": {
+      "style": "Treemap/Grid of Nifty Sectors (IT, Banking, Auto, Pharma, FMCG, Metal, Energy) colored by average gain/loss strength"
+    },
+    "stock_detail_drawer": {
+      "component": "Side Drawer / Modal with Recharts candlestick/area price graph, RSI momentum line, MACD histogram, and key technical indicators (20 EMA, 50 SMA, 52W High/Low)"
+    },
+    "watchlist_page": {
+      "style": "LocalStorage powered customizable watchlist grid with quick-remove, target alerts, and signal summaries"
+    },
+    "news_feed": {
+      "style": "Real-time market news stream aggregated from CNBC-TV18, Moneycontrol, ET Markets, Yahoo Finance RSS feeds with source filtering tags"
+    }
+  },
+  "testing_attributes": {
+    "rule": "ALL interactive and data-displaying elements MUST have data-testid in kebab-case",
+    "examples": {
+      "nav_tabs": "data-testid=\"nav-tab-pulse\", data-testid=\"nav-tab-signals\", data-testid=\"nav-tab-watchlist\", data-testid=\"nav-tab-news\"",
+      "stock_search": "data-testid=\"stock-search-input\"",
+      "timeframe_selector": "data-testid=\"timeframe-5m\", data-testid=\"timeframe-15m\", data-testid=\"timeframe-30m\", data-testid=\"timeframe-60m\"",
+      "universe_toggle": "data-testid=\"universe-toggle-nifty50\", data-testid=\"universe-toggle-nifty200\"",
+      "signal_filter": "data-testid=\"signal-filter-rsi-bullish\", data-testid=\"signal-filter-macd-crossover\"",
+      "stock_row": "data-testid=\"stock-row-RELIANCE\", data-testid=\"stock-row-TCS\"",
+      "watchlist_btn": "data-testid=\"watchlist-toggle-RELIANCE\"",
+      "stock_drawer": "data-testid=\"stock-detail-drawer\""
+    }
+  },
+  "image_urls": {
+    "trading_bg_1": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwxfHxzdG9jayUyMG1hcmtldCUyMHRyYWRpbmclMjBkYXNoYm9hcmQlMjBjaGFydHxlbnwwfHx8fDE3OTM2MjEwMDJ8MA&ixlib=rb-4.1.0&q=85",
+    "trading_bg_2": "https://images.unsplash.com/photo-1651341050677-24dba59ce0fd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwzfHxzdG9jayUyMG1hcmtldCUyMHRyYWRpbmclMjBkYXNoYm9hcmQlMjBjaGFydHxlbnwwfHx8fDE3OTM2MjEwMDJ8MA&ixlib=rb-4.1.0&q=85",
+    "trading_bg_3": "https://images.unsplash.com/photo-1560221328-12fe60f83ab8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHw0fHxzdG9jayUyMG1hcmtldCUyMHRyYWRpbmclMjBkYXNoYm9hcmQlMjBjaGFydHxlbnwwfHx8fDE3OTM2MjEwMDJ8MA&ixlib=rb-4.1.0&q=85",
+    "trading_bg_4": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwyfHxzdG9jayUyMG1hcmtldCUyMHRyYWRpbmclMjBkYXNoYm9hcmQlMjBjaGFydHxlbnwwfHx8fDE3OTM2MjEwMDJ8MA&ixlib=rb-4.1.0&q=85"
+  },
+  "instructions_to_main_agent": [
+    "1. Build a high-frequency trading command center UI specifically for Indian stock traders (NSE Nifty 200).",
+    "2. Connect with backend FastAPI endpoints that fetch live/delayed quotes or fallback seamlessly to realistic calculated mock data with real Yahoo Finance symbol formats (e.g. RELIANCE.NS, TCS.NS, INFY.NS, HDFCBANK.NS).",
+    "3. Implement live RSI (Relative Strength Index) calculation and MACD (12, 26, 9) signal engine for 5m, 15m, 30m, 60m timeframes.",
+    "4. Ensure tab switching between Pulse, Signals, Watchlist, News is instant with URL parameter or state sync.",
+    "5. Use LocalStorage for saving user Watchlist stocks persistently without login requirement.",
+    "6. Use Sonner toasts to notify user when adding/removing stocks from Watchlist or triggering a scanner alert test.",
+    "7. Include comprehensive data-testid attributes on all buttons, table rows, filter tabs, inputs, and indicators."
+  ]
+}

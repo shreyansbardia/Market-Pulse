@@ -1,0 +1,42 @@
+{
+  "summary": "First full run of Market Pulse (market closed, last-session data). Backend: 19/19 pytest pass (status, universe, overview, stocks filters, signals for all 5 TFs + nifty50 + only_signals=false, invalid tf 400, stock chart 5m/1d, unknown symbol 404, news + source filter, per-stock Google News, missing param 422, no NaN in JSON). Frontend: Pulse page (ticker strip, breadth/mood, 6 index cards, 13 sector tiles, 4 signal counts linking to /signals?type=X, gainers/losers/volume shockers) all render. Clicking a row opens the drawer with 3 recharts; drawer-tf-5m..1d all reload. Signals page: TF, universe, type filters, search, empty state, refresh and deep links all work. Watchlist star add/remove persists to mp_watchlist, cards and per-stock news render, empty state works. The ⌘K/Ctrl+K search and stock-search-open both work, and picking a result opens the drawer. News source chips filter correctly. Mobile has no horizontal overflow and mobile nav works. No page errors. The main issues are in news data quality and some small mobile layout problems.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/news", "issue": "HTML entities are not decoded in titles and summaries, e.g. 'L&amp;T' (Livemint) and 'day#39;s' (Moneycontrol). market._parse_feed should run html.unescape on title and summary (and fix the malformed '#39;' too)."},
+      {"endpoint": "/api/news?source=Moneycontrol", "issue": "The Moneycontrol feed (rss/marketreports.xml) is stale: it returns only 4 items, the newest about 923 days old (2023). Switch to a live feed (e.g. https://www.moneycontrol.com/rss/latestnews.xml or buzzingstocks.xml) or drop items older than N days."},
+      {"endpoint": "/api/news/stocks", "issue": "The Google News query '<SYM> share NSE' returns loosely related items, e.g. 'Infosys Share Price…' and 'Top Losers Today' tagged as TCS. Consider querying by company name, or filtering titles that contain the symbol or company name."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Signals table (mobile 390px)", "issue": "Signal badges wrap vertically ('MACD / BULL · / X') and are cut off at the right edge. Add whitespace-nowrap to SignalBadge.", "selector": "[data-testid^='signal-']", "priority": "LOW"},
+      {"component": "Signals filter segment (mobile)", "issue": "The signal-filter buttons wrap onto 2–3 lines inside the segmented control and look cramped. Make it scroll horizontally or use nowrap.", "selector": "[data-testid^='signal-filter-']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "News & Watchlist (1920 desktop)", "issues": ["The news list panel takes only about half the content width, leaving a large empty area on the right."]},
+      {"screen": "Signal badge", "issues": ["The '·0b' bars-ago text is 10px at opacity-60, so contrast is low."]},
+      {"screen": "Stock drawer intraday charts", "issues": ["The X axis shows only HH:MM across several days (repeated 13:15/11:15 labels). Add the date for multi-day intraday ranges."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_market_pulse_api.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "html.unescape news title/summary in market._parse_feed",
+    "Replace the stale Moneycontrol RSS URL, or filter out old items",
+    "Add whitespace-nowrap to SignalBadge and make the signal-filter segment scroll horizontally on mobile",
+    "Add .catch to Signals load() so a failed request shows an error instead of an endless skeleton"
+  ],
+  "critical_code_review_comments": [
+    "Signals.jsx load() has no .catch: if the API fails, the skeleton stays forever and there is no error state.",
+    "StockDrawer Body and Signals switch timeframes without cancelling or ignoring older requests, so a slow earlier response can overwrite the newer timeframe (race condition). Use an ignore flag or AbortController in useEffect.",
+    "market._fetch_chart: a failed yfinance download gives an empty series and analysis=None, which is handled but not reported to the user. Consider returning 502 when the series is empty.",
+    "The news_stocks gather has no overall timeout: up to 15 sequential Google RSS fetches, each with a 10s timeout, can block the response."
+  ],
+  "updated_files": ["/app/backend/tests/test_market_pulse_api.py"],
+  "success_rate": {"backend": "100%", "frontend": "95%"},
+  "seed_data_creation": "none (watchlist set via localStorage in browser only)",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: REACT_APP_BACKEND_URL=... pytest /app/backend/tests -q. Data comes from live yfinance; the market was closed during this run. ICICIPRULI.NS fails intraday downloads (yfinance 'possibly delisted'). The default watchlist when localStorage is empty is RELIANCE, HDFCBANK, TCS, INFY."
+}

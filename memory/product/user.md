@@ -1,0 +1,3 @@
+- Purpose: product for traders (Indian NSE market), free and open for now
+- Reference: tredye.com/pulse
+- Style: short messages, wants things done quickly
