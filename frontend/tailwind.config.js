@@ -15,6 +15,19 @@ module.exports = {
         sm: 'calc(var(--radius) - 4px)'
       },
       colors: {
+        mp: {
+          bg: 'rgb(var(--c-bg) / <alpha-value>)',
+          surface: 'rgb(var(--c-surface) / <alpha-value>)',
+          elev: 'rgb(var(--c-elev) / <alpha-value>)',
+          sunken: 'rgb(var(--c-sunken) / <alpha-value>)',
+          border: 'rgb(var(--c-border) / <alpha-value>)',
+          fg: 'rgb(var(--c-fg) / <alpha-value>)',
+          muted: 'rgb(var(--c-muted) / <alpha-value>)',
+          faint: 'rgb(var(--c-faint) / <alpha-value>)',
+          accent: 'rgb(var(--c-accent) / <alpha-value>)',
+          bull: 'rgb(var(--c-bull) / <alpha-value>)',
+          bear: 'rgb(var(--c-bear) / <alpha-value>)',
+        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {

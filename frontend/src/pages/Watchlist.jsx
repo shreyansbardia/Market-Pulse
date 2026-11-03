@@ -8,9 +8,9 @@ import { NewsItem } from "./News";
 const Card = ({ s, sig }) => {
   const { setOpenSymbol } = useApp();
   return (
-    <div data-testid={`watch-card-${s.symbol}`} onClick={() => setOpenSymbol(s.symbol)} className="panel p-4 rise cursor-pointer hover:border-[#6366F1]/50 transition-colors">
+    <div data-testid={`watch-card-${s.symbol}`} onClick={() => setOpenSymbol(s.symbol)} className="panel p-4 rise cursor-pointer hover:border-mp-accent/50 transition-colors">
       <div className="flex justify-between items-start">
-        <div><div className="font-mono font-semibold">{s.symbol}</div><div className="text-[11px] text-slate-500">{s.sector}</div></div>
+        <div><div className="font-mono font-semibold">{s.symbol}</div><div className="text-[11px] text-mp-faint">{s.sector}</div></div>
         <WatchBtn symbol={s.symbol} />
       </div>
       <div className="flex items-end justify-between mt-3">
@@ -19,7 +19,7 @@ const Card = ({ s, sig }) => {
       </div>
       <div className="flex flex-wrap gap-1 mt-3 min-h-[20px]">
         {sig?.signals?.map((x, i) => <SignalBadge key={i} s={x} />)}
-        {sig && <span className="font-mono text-[10px] text-slate-500 self-center">RSI15m {fmt(sig.rsi, 1)}</span>}
+        {sig && <span className="font-mono text-[10px] text-mp-faint self-center">RSI15m {fmt(sig.rsi, 1)}</span>}
       </div>
     </div>
   );
@@ -52,7 +52,7 @@ export default function Watchlist() {
         </div>
       )}
       <div className="panel overflow-hidden">
-        <PanelHead eyebrow="Google News · per-stock" title="Watchlist News" right={<Link to="/news" className="font-mono text-xs text-[#6366F1]" data-testid="all-news-link">All market news →</Link>} />
+        <PanelHead eyebrow="Google News · per-stock" title="Watchlist News" right={<Link to="/news" className="font-mono text-xs text-mp-accent" data-testid="all-news-link">All market news →</Link>} />
         <div data-testid="watchlist-news">
           {!news ? <Empty text="Loading headlines…" /> : news.items.length === 0 ? <Empty testid="watchlist-news-empty" text="No recent headlines for your stocks." /> :
             news.items.slice(0, 30).map((n, i) => <NewsItem key={n.link + i} n={n} i={i} testid={`watch-news-${i}`} />)}

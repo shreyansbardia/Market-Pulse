@@ -13,6 +13,8 @@ import requests
 import yfinance as yf
 from concurrent.futures import ThreadPoolExecutor
 
+import analytics
+import nse
 from indicators import analyze, chart_series
 from universe import NIFTY200, NIFTY50, SECTOR_OF, INDICES, yf_symbol
 
@@ -23,6 +25,7 @@ IST = timezone(timedelta(hours=5, minutes=30))
 TIMEFRAMES = {"5m": "5d", "15m": "10d", "30m": "20d", "60m": "1mo", "1d": "1y"}
 
 NEWS_FEEDS = {
+    "CNBC-TV18": "https://www.cnbctv18.com/commonfeeds/v1/cne/rss/market.xml",
     "CNBC": "https://www.cnbc.com/id/10001147/device/rss/rss.html",
     "Yahoo Finance": "https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5ENSEI,%5EBSESN,RELIANCE.NS,HDFCBANK.NS&region=IN&lang=en-IN",
     "Moneycontrol": "https://news.google.com/rss/search?q=site:moneycontrol.com+markets+when:2d&hl=en-IN&gl=IN&ceid=IN:en",
@@ -30,7 +33,7 @@ NEWS_FEEDS = {
     "Livemint": "https://www.livemint.com/rss/markets",
 }
 
-STATE = {"quotes": {}, "indices": [], "signals": {}, "quotes_at": None, "signals_at": {}, "news": [], "news_at": 0}
+STATE = {"quotes": {}, "indices": [], "intraday": {}, "analytics": None, "signals": {}, "quotes_at": None, "signals_at": {}, "news": [], "news_at": 0}
 _chart_cache = {}
 _stock_news_cache = {}
 
@@ -71,35 +74,57 @@ def _frame(data, ticker):
 def _fetch_quotes():
     tickers = [yf_symbol(s) for s in NIFTY200]
     data = _download(tickers, "1y", "1d")
-    quotes = {}
+    quotes, frames = {}, {}
     for sym in NIFTY200:
         df = _frame(data, yf_symbol(sym))
         if df is None or len(df) < 2:
             continue
+        frames[sym] = df
         c = df["Close"]
         last, prev = float(c.iloc[-1]), float(c.iloc[-2])
         avg_vol = df["Volume"].iloc[-21:-1].mean()
+        h, l, o = float(df["High"].iloc[-1]), float(df["Low"].iloc[-1]), float(df["Open"].iloc[-1])
+        vol = float(df["Volume"].iloc[-1])
+        clv = ((last - l) - (h - last)) / (h - l) if h > l else 0.0
+        turnover = last * vol / 1e7
         quotes[sym] = {
             "symbol": sym, "sector": SECTOR_OF.get(sym, "Other"), "nifty50": sym in NIFTY50,
             "ltp": round(last, 2), "prev_close": round(prev, 2),
             "change": round(last - prev, 2), "change_pct": round((last / prev - 1) * 100, 2),
-            "open": round(float(df["Open"].iloc[-1]), 2), "high": round(float(df["High"].iloc[-1]), 2),
-            "low": round(float(df["Low"].iloc[-1]), 2), "volume": int(df["Volume"].iloc[-1]),
-            "vol_ratio": round(float(df["Volume"].iloc[-1] / avg_vol), 2) if avg_vol else None,
+            "open": round(o, 2), "high": round(h, 2), "low": round(l, 2), "volume": int(vol),
+            "vol_ratio": round(float(vol / avg_vol), 2) if avg_vol else None,
             "high_52w": round(float(df["High"].max()), 2), "low_52w": round(float(df["Low"].min()), 2),
             "spark": [round(float(x), 2) for x in c.tail(20)],
+            "turnover_cr": round(turnover, 2), "clv": round(clv, 3), "flow_cr": round(clv * turnover, 2),
         }
-    idx_data = _download([i["yf"] for i in INDICES], "1mo", "1d")
+    idx_data = _download([i["yf"] for i in INDICES], "1y", "1d")
     indices = []
     for i in INDICES:
         df = _frame(idx_data, i["yf"])
         if df is None or len(df) < 2:
             continue
-        last, prev = float(df["Close"].iloc[-1]), float(df["Close"].iloc[-2])
-        indices.append({"key": i["key"], "name": i["name"], "ltp": round(last, 2),
+        c = df["Close"]
+        last, prev = float(c.iloc[-1]), float(c.iloc[-2])
+        indices.append({"key": i["key"], "name": i["name"], "ltp": round(last, 2), "prev_close": round(prev, 2),
                         "change": round(last - prev, 2), "change_pct": round((last / prev - 1) * 100, 2),
-                        "spark": [round(float(x), 2) for x in df["Close"].tail(20)]})
-    return quotes, indices
+                        "high": round(float(df["High"].iloc[-1]), 2), "low": round(float(df["Low"].iloc[-1]), 2),
+                        "ema20": round(float(c.ewm(span=20, adjust=False).mean().iloc[-1]), 2),
+                        "sigma20": round(float(c.pct_change().tail(20).std()), 5),
+                        "date": df.index[-1].strftime("%Y-%m-%d"),
+                        "spark": [round(float(x), 2) for x in c.tail(30)],
+                        "hist": [round(float(x), 2) for x in c] if i["key"] == "INDIAVIX" else None})
+    intraday = {}
+    intra = _download(["^NSEI", "^NSEBANK"], "5d", "5m")
+    for key, t in (("NIFTY50", "^NSEI"), ("BANKNIFTY", "^NSEBANK")):
+        df = _frame(intra, t)
+        if df is None:
+            continue
+        last_day = df.index[-1].date()
+        df = df[[d.date() == last_day for d in df.index]]
+        intraday[key] = [{"t": ts.isoformat(), "c": round(float(v), 2)} for ts, v in df["Close"].items()]
+    nifty_df = _frame(idx_data, "^NSEI")
+    stats = analytics.build(frames, nifty_df["Close"]) if nifty_df is not None and frames else None
+    return quotes, indices, intraday, stats
 
 
 def _scan(tf):
@@ -120,12 +145,15 @@ def _scan(tf):
 
 
 async def refresh_quotes(db):
-    quotes, indices = await asyncio.to_thread(_fetch_quotes)
+    quotes, indices, intraday, stats = await asyncio.to_thread(_fetch_quotes)
+    if stats:
+        STATE["analytics"] = stats
+        await db.snapshots.replace_one({"_id": "analytics"}, {"_id": "analytics", **stats}, upsert=True)
     if quotes:
-        STATE["quotes"], STATE["indices"] = quotes, indices
+        STATE["quotes"], STATE["indices"], STATE["intraday"] = quotes, indices, intraday
         STATE["quotes_at"] = datetime.now(timezone.utc).isoformat()
         await db.snapshots.replace_one({"_id": "quotes"}, {"_id": "quotes", "quotes": quotes, "indices": indices,
-                                                            "at": STATE["quotes_at"]}, upsert=True)
+                                                            "intraday": intraday, "at": STATE["quotes_at"]}, upsert=True)
 
 
 async def refresh_signals(db, tf):
@@ -137,10 +165,36 @@ async def refresh_signals(db, tf):
                                                                    "at": STATE["signals_at"][tf]}, upsert=True)
 
 
+async def snapshot_oi(db):
+    for sym in ("NIFTY", "BANKNIFTY"):
+        try:
+            ch = await asyncio.to_thread(nse.chain, sym)
+        except Exception as e:
+            log.warning("oi snapshot %s failed: %s", sym, e)
+            continue
+        ts = ch["timestamp"]
+        await db.oi_history.update_one(
+            {"symbol": sym, "timestamp": ts},
+            {"$set": {"symbol": sym, "timestamp": ts, "session": ts.split(" ")[0], "expiry": ch["expiry"],
+                      "spot": ch["spot"], "pcr": ch["pcr"], "ce_oi": ch["ce_oi"], "pe_oi": ch["pe_oi"],
+                      "ce_chg_oi": ch["ce_chg_oi"], "pe_chg_oi": ch["pe_chg_oi"], "max_pain": ch["max_pain"],
+                      "at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+
+
+async def oi_history(db, sym):
+    last = await db.oi_history.find_one({"symbol": sym}, {"_id": 0, "session": 1}, sort=[("at", -1)])
+    if not last:
+        return []
+    return await db.oi_history.find({"symbol": sym, "session": last["session"]}, {"_id": 0}).sort("at", 1).to_list(500)
+
+
 async def load_snapshots(db):
     async for doc in db.snapshots.find({}):
         if doc["_id"] == "quotes":
             STATE["quotes"], STATE["indices"], STATE["quotes_at"] = doc["quotes"], doc["indices"], doc["at"]
+            STATE["intraday"] = doc.get("intraday", {})
+        elif doc["_id"] == "analytics":
+            STATE["analytics"] = {k: doc[k] for k in ("metrics", "rrg", "sectors")}
         elif doc["_id"].startswith("signals_"):
             tf = doc["_id"].split("_", 1)[1]
             STATE["signals"][tf], STATE["signals_at"][tf] = doc["rows"], doc["at"]
@@ -151,6 +205,7 @@ async def run_loop(db):
     while True:
         try:
             await refresh_quotes(db)
+            await snapshot_oi(db)
             for tf in TIMEFRAMES:
                 await refresh_signals(db, tf)
         except Exception as e:

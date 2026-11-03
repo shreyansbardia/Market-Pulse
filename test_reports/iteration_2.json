@@ -1,0 +1,46 @@
+{
+  "summary": "Round 2 testing of the Tredye-style visuals and the theme toggle (market closed, data from the 02-Nov-2026 session). Backend: 27/27 pytest pass. That is the 19 from iteration 1 plus 8 new /api/pulse tests: keys, no NaN/Inf, headline/tape/status label, mood weights adding up to the score, rotation sign/sum consistency, NIFTY/BANKNIFTY tag/intraday/expected range, VIX spark (30), percentile, nifty_move_pts = ltp*VIX/sqrt(252), and sort order of treemap and lists. Frontend at 1920: the headline and 'Market closed · showing today's close' status label render. Tabs switch content (overview/money/order). Money rotation shows 5 inflow nodes and 1 outflow node (IT), 19 animated dots, and net flow +₹24,620 cr. The surge button (DIXON), inflow node, outflow node, treemap cell (HDFCBANK), leader and laggard buttons all open the drawer. Mood card shows 78 Risk-on and all 4 parts. NIFTY and BANKNIFTY cards show ltp, Bullish tag, chart and range. VIX card shows 15.50 Normal, 71st percentile, ±229 pts. Treemap has 200 cells. Signal summary has 4 counts and the gainers/losers/shockers lists render. Money tab: 13 sector bars with visible widths, 12 top inflow rows and 12 top outflow rows, and rows open the drawer. Order tab: buy pressure, sell pressure and volume surges each have 12 rows, and rows open the drawer. Theme toggle: light is the default, switching gives dark with html.dark and mp_theme=dark, and this survives a reload. Pulse, Signals and the drawer are readable in dark; Watchlist, News and the drawer are readable in light. Regressions all pass: Signals filters, search, watchlist star toggle (localStorage), ⌘K search opening the drawer, and the news source filter. No page errors. Mobile 390 has no horizontal overflow, but the money rotation SVG text becomes unreadable there.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/pulse rotation.text", "issue": "The inflow amount is the sum of the top 5 inflow sectors, but only 3 names are listed ('₹21,456 cr went into Energy & Metals & Industrials'). Either list all 5 or sum only the 3 named. The joiner also produces 'A & B & C'; use 'A, B & C'."},
+      {"endpoint": "/api/pulse rotation outflow node", "issue": "Outflow sector nodes open s.top_in, the stock in that sector with the largest positive flow. For IT this opened COFORGE instead of the biggest outflow stock, INFY. Add a top_out field (the stock with min flow_cr) and use it for outflow nodes."},
+      {"endpoint": "/api/pulse status_label", "issue": "When the market is closed it always says 'showing today's close', which is wrong on weekends, holidays and before 09:15. Use \"last session's close (<date>)\" when the data date is not today."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MoneyRotation (mobile 390px)", "issue": "The SVG (viewBox 960x360) shrinks to about 40% scale, so sector names, ₹ values and the NET FLOW text render at about 5px and cannot be read. Use a vertical or simpler layout below md, or larger fonts with a min-height.", "selector": "[data-testid='money-rotation']", "priority": "MEDIUM"},
+      {"component": "VixCard percentile", "issue": "The ordinal suffix is hard-coded, so it shows '71th percentile'. Use proper ordinals (st/nd/rd/th).", "selector": "[data-testid='vix-percentile']", "priority": "LOW"},
+      {"component": "Mobile nav (light theme)", "issue": "The active 'Pulse' tab label has very low contrast against its active background (it is almost invisible).", "selector": "[data-testid='mobile-nav-pulse']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Money flow tab", "issues": ["The Sector Money Flow panel stretches to the height of the 12-row lists, leaving a large empty area below the 13 bars. Use self-start or add a summary.", "The linear bar scale makes every sector except Energy a sliver. Consider a sqrt scale."]},
+      {"screen": "Top outflows", "issues": ["Stocks with positive % change (BANKBARODA +2.75%, M&M +1.80%) appear as outflows because of the CLV estimate. Add a tooltip or note saying 'estimated from close location', or users will be confused."]},
+      {"screen": "Treemap (mobile)", "issues": ["Most cells have no labels at 390px. Acceptable, but consider tap-to-show labels."]},
+      {"screen": "News (CNBC)", "issues": ["The CNBC feed is US-centric (Rivian, Starbucks), which does not fit an NSE dashboard."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_pulse_api.py", "/app/backend/tests/test_market_pulse_api.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Make MoneyRotation readable on mobile (alternate layout or larger text below md)",
+    "Fix the rotation_text inflow sum/name mismatch and the 'A & B & C' joining",
+    "Add top_out per sector and use it for the outflow node click",
+    "Fix the VIX percentile ordinal ('71th')",
+    "Fix active mobile nav tab contrast in the light theme",
+    "Make status_label say last session's close with its date when the data is not from today"
+  ],
+  "critical_code_review_comments": [
+    "Pulse.jsx load() swallows errors (.catch(() => {})). If the first fetch fails, the skeleton shows forever with no error state.",
+    "The Headline split on ':' depends on the 'X tape:' prefix. The tape and the rest already exist as separate data, so send headline_rest from the backend instead of string-splitting.",
+    "pulse._vix_card divides by len(hist), which throws ZeroDivisionError if hist and spark are both empty. Guard it.",
+    "The SVG <g> nodes are clickable only on painted text or circles. Add a transparent hit rect for a larger tap target, especially on mobile."
+  ],
+  "updated_files": ["/app/backend/tests/test_pulse_api.py"],
+  "success_rate": {"backend": "100%", "frontend": "93%"},
+  "seed_data_creation": "none (localStorage only: mp_watchlist, mp_theme)",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: REACT_APP_BACKEND_URL=<from frontend/.env> pytest /app/backend/tests -q (27 tests, about 45s). The market was closed and the data date was 02-Nov-2026, so expected.by is 03-Nov. Only 1 outflow sector (IT) appeared. SVG nodes need clicks on their text or circle child (Playwright clicking the <g> centre misses). Theme key: mp_theme."
+}

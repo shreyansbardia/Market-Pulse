@@ -13,6 +13,10 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 import market  # noqa: E402
+import nse  # noqa: E402
+import liquidity  # noqa: E402
+import analytics  # noqa: E402
+from pulse import build_pulse  # noqa: E402
 from universe import NIFTY200, NIFTY50, SECTOR_OF  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -57,6 +61,11 @@ async def overview():
     return market.overview()
 
 
+@api.get("/pulse")
+async def pulse():
+    return build_pulse()
+
+
 @api.get("/stocks")
 async def stocks(universe: str = "nifty200", symbols: str = None):
     rows = list(market.STATE["quotes"].values())
@@ -86,6 +95,81 @@ async def stock(symbol: str, tf: str = Query("15m")):
     if tf not in market.TIMEFRAMES:
         raise HTTPException(400, "invalid timeframe")
     return await market.stock_chart(symbol, tf)
+
+
+@api.get("/options/{symbol}")
+async def options(symbol: str, expiry: str = None):
+    try:
+        return await asyncio.to_thread(nse.chain, symbol, expiry)
+    except Exception as e:
+        raise HTTPException(502, f"NSE option chain unavailable: {e}")
+
+
+@api.get("/options-symbols")
+async def options_symbols():
+    return {"indices": nse.INDEX_SYMBOLS, "stocks": NIFTY200}
+
+
+@api.get("/oi-flow/{symbol}")
+async def oi_flow(symbol: str):
+    symbol = symbol.upper()
+    try:
+        ch = await asyncio.to_thread(nse.chain, symbol)
+    except Exception as e:
+        raise HTTPException(502, f"NSE option chain unavailable: {e}")
+    builds = {}
+    for r in ch["strikes"]:
+        for side in ("ce", "pe"):
+            b = r[f"{side}_build"]
+            builds.setdefault(f"{side}:{b}", 0)
+            builds[f"{side}:{b}"] += abs(r[side]["chg_oi"])
+    return {"chain": ch, "history": await market.oi_history(db, symbol), "buildup": builds}
+
+
+@api.get("/liquidity/{symbol}")
+async def liquidity_map(symbol: str):
+    symbol = symbol.upper()
+    if symbol not in NIFTY200 and symbol not in liquidity.INDEX_YF:
+        raise HTTPException(404, "unknown symbol")
+    try:
+        return await asyncio.to_thread(liquidity.build, symbol)
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+
+
+def _analytics():
+    a = market.STATE.get("analytics")
+    if not a:
+        raise HTTPException(503, "analytics warming up")
+    return a
+
+
+@api.get("/radar")
+async def radar():
+    a = _analytics()
+    return {"rrg": a["rrg"]}
+
+
+@api.get("/radar/{symbol}")
+async def radar_stock(symbol: str):
+    m = _analytics()["metrics"].get(symbol.upper())
+    if not m:
+        raise HTTPException(404, "unknown symbol")
+    return m
+
+
+@api.get("/strength")
+async def strength(universe: str = "nifty200"):
+    a = _analytics()
+    ms = [m for m in a["metrics"].values() if universe != "nifty50" or m["nifty50"]]
+    ranked = sorted(ms, key=lambda m: -m["rs_score"])
+    slim = lambda m: {k: m[k] for k in ("symbol", "sector", "ltp", "change_pct", "rs_score", "rel", "returns", "radar")}  # noqa: E731
+    return {"sectors": a["sectors"], "strongest": [slim(m) for m in ranked[:15]], "weakest": [slim(m) for m in ranked[::-1][:15]]}
+
+
+@api.get("/screeners")
+async def screeners_api(universe: str = "nifty200"):
+    return {"screeners": analytics.screeners(_analytics()["metrics"], universe)}
 
 
 @api.get("/news")

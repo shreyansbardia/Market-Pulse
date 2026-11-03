@@ -9,6 +9,12 @@ import Pulse from "./pages/Pulse";
 import Signals from "./pages/Signals";
 import Watchlist from "./pages/Watchlist";
 import News from "./pages/News";
+import Options from "./pages/Options";
+import OIFlow from "./pages/OIFlow";
+import Liquidity from "./pages/Liquidity";
+import Radar from "./pages/Radar";
+import Strength from "./pages/Strength";
+import Screeners from "./pages/Screeners";
 
 function Shell() {
   const [overview, setOverview] = useState(null);
@@ -27,10 +33,16 @@ function Shell() {
           <Route path="/signals" element={<Signals />} />
           <Route path="/watchlist" element={<Watchlist />} />
           <Route path="/news" element={<News />} />
+          <Route path="/options" element={<Options />} />
+          <Route path="/oi-flow" element={<OIFlow />} />
+          <Route path="/liquidity" element={<Liquidity />} />
+          <Route path="/radar" element={<Radar />} />
+          <Route path="/strength" element={<Strength />} />
+          <Route path="/screeners" element={<Screeners />} />
         </Routes>
       </main>
-      <footer className="relative z-10 px-4 md:px-8 py-6 border-t border-[#232736] font-mono text-[10px] text-slate-600">
-        Data via Yahoo Finance (delayed). News via public RSS. For education only, not investment advice.
+      <footer className="relative z-10 px-4 md:px-8 py-6 border-t border-mp-border font-mono text-[10px] text-mp-faint">
+        Data via Yahoo Finance (delayed) and NSE public option-chain data. News via public RSS. For education only, not investment advice.
       </footer>
       <StockDrawer />
     </div>

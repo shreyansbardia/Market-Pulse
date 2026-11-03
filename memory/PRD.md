@@ -14,7 +14,14 @@ Watchlist in localStorage; RSS news (CNBC, Yahoo Finance, Moneycontrol, ET Marke
 ## Implemented (2026-11-02)
 - All of the above; tested iteration_1 (backend 100%, frontend 95%), fixes applied: HTML entities, Moneycontrol stale feed → Google News site query, mobile badge/segments, news width, intraday date labels, per-source news fallback.
 
+## Implemented (2026-11-02, Round 2)
+- /api/pulse (backend/pulse.py): headline, mood score (breadth 35/flow 30/nifty 20/vol 15), estimated money flow (turnover × close-location), rotation, NIFTY/BANKNIFTY cards w/ intraday + VIX-based expected range, VIX card (percentile, expected move), treemap, buy/sell pressure, volume surges.
+- Frontend: Pulse tabs Overview/Money flow/Order flow; animated SVG money rotation (streaming particles, net-flow capsule; mobile list variant), gauges, index cards, VIX card, recharts treemap; light (default, purple accent) / dark theme toggle via CSS vars (mp-* tailwind colors).
+- News: added CNBC-TV18 feed. Tested iteration_2 (backend 27/27, frontend 93%) and fixed all reported issues afterwards.
+- Note: user's attached screenshots were of an unrelated site (Bosscoder); built from the written description.
+
 ## Backlog
+- P0 (Round 3): F&O visuals — Option Pulse (OI, PCR, IV smile, writers' range), OI Flow, Liquidity map, Radar, Strength, Screeners. Needs NSE public option-chain source (not on Yahoo).
 - P1: Price alerts on watchlist, hidden divergence, more indicators (Supertrend, VWAP), option pulse / PCR (NSE)
 - P1: Company names in universe for better per-stock news
 - P2: Accounts + synced watchlist, Telegram alerts on new signals

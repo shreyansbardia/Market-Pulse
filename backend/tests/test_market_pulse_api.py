@@ -116,7 +116,7 @@ def test_stock_invalid_tf_400():
 # News
 def test_news():
     d = get("/news").json()
-    assert len(d["sources"]) == 5
+    assert len(d["sources"]) >= 5
     assert len(d["items"]) > 0
     src = d["items"][0]["source"]
     f = get("/news", params={"source": src}).json()["items"]
