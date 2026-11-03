@@ -28,8 +28,6 @@ const Tabs = ({ tab, setTab }) => {
 };
 
 const Headline = ({ d }) => {
-  const [tape, ...rest] = d.headline.split(":");
-  const c = d.tape === "Risk-on" ? "text-mp-bull" : d.tape === "Risk-off" ? "text-mp-bear" : "text-mp-accent";
   return (
     <div className="rise">
       <div className="flex items-center gap-2 mb-3" data-testid="pulse-status-label">
@@ -39,9 +37,6 @@ const Headline = ({ d }) => {
         </span>
         <span className="font-mono text-[11px] text-mp-muted">{d.status_label} · updated {timeAgo(d.updated_at)}</span>
       </div>
-      <h1 data-testid="pulse-headline" className="text-2xl md:text-3xl lg:text-[34px] font-semibold tracking-tight leading-snug max-w-5xl">
-        <span className={c}>{tape}:</span><span className="text-mp-fg">{rest.join(":")}</span>
-      </h1>
     </div>
   );
 };

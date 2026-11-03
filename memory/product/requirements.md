@@ -34,6 +34,9 @@ User's words: "All these section FNO related visual and all these things just ad
 Context: Tredye's nav shows Options, OI Flow, Liquidity, Radar, Strength and Screeners. Its homepage describes "Option Pulse · Open interest, put-call ratio, IV smile and the writers' range" and "Liquidity Map · Where resting liquidity and stops cluster around price."
 Note: Yahoo Finance doesn't provide NSE option chain data, so this needs a free public source such as NSE's public option-chain data.
 
+## Round 4: visual edits on Pulse
+User's edits on the Pulse page: span at line 43 [Pulse_43_42], "not needed this"; span at line 43 [Pulse_43_8], "Not needed". Remove both.
+
 ## Integrations
 - Yahoo Finance for market data (no key)
 - News feeds: CNBC, Yahoo Finance news, or other top stock market news sources
