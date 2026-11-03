@@ -166,11 +166,13 @@ async def refresh_signals(db, tf):
 
 
 async def snapshot_oi(db):
-    for sym in ("NIFTY", "BANKNIFTY"):
+    for sym in nse.INDEX_SYMBOLS:
         try:
             ch = await asyncio.to_thread(nse.chain, sym)
         except Exception as e:
             log.warning("oi snapshot %s failed: %s", sym, e)
+            continue
+        if ch.get("stale") or sym not in ("NIFTY", "BANKNIFTY"):
             continue
         ts = ch["timestamp"]
         await db.oi_history.update_one(

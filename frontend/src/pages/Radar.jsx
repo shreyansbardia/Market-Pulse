@@ -18,6 +18,14 @@ const RRG = ({ rrg }) => {
   const Y = (v) => H - M - ((v - (100 - sy)) / (2 * sy)) * (H - 2 * M);
   const qc = { Leading: p.bull, Weakening: p.warn, Lagging: p.bear, Improving: p.sky };
   const cx = X(100), cy = Y(100);
+  const labelY = {};
+  [...rrg].map((r) => ({ s: r.sector, x: X(r.tail[r.tail.length - 1].x), y: Y(r.tail[r.tail.length - 1].y) }))
+    .sort((a, b) => a.y - b.y)
+    .forEach((h, i, arr) => {
+      let ly = h.y + 4;
+      arr.slice(0, i).forEach((o) => { if (Math.abs(o.x - h.x) < 110 && Math.abs(labelY[o.s] - ly) < 14) ly = labelY[o.s] + 14; });
+      labelY[h.s] = ly;
+    });
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" data-testid="rrg-svg">
       <rect x={cx} y={M} width={W - M - cx} height={cy - M} fill={p.bull} opacity={0.06} />
@@ -42,8 +50,9 @@ const RRG = ({ rrg }) => {
             {r.tail.slice(0, -1).map((t, i) => <circle key={i} cx={X(t.x)} cy={Y(t.y)} r={1.5 + i * 0.35} fill={c} opacity={0.35 + (i / r.tail.length) * 0.5} />)}
             <circle cx={X(head.x)} cy={Y(head.y)} r={7} fill={c} className="ping-ring" opacity={0.5} />
             <circle cx={X(head.x)} cy={Y(head.y)} r={6} fill={c} stroke={p.tipBg} strokeWidth={2} />
-            <text x={X(head.x) + 10} y={Y(head.y) + 4} fill={p.fg} style={{ font: "600 12px 'DM Sans'" }}>{r.sector}</text>
-            {focus === r.sector && <text x={X(head.x) + 10} y={Y(head.y) + 18} fill={p.tick} style={{ font: "500 10px 'JetBrains Mono'" }}>{head.x.toFixed(2)} / {head.y.toFixed(2)} · {r.tail[0].date}→{head.date}</text>}
+            {Math.abs(labelY[r.sector] - (Y(head.y) + 4)) > 2 && <line x1={X(head.x) + 6} y1={Y(head.y)} x2={X(head.x) + 10} y2={labelY[r.sector] - 4} stroke={c} strokeWidth={1} />}
+            <text x={X(head.x) + 10} y={labelY[r.sector]} fill={p.fg} style={{ font: "600 12px 'DM Sans'" }}>{r.sector}</text>
+            {focus === r.sector && <text x={X(head.x) + 10} y={labelY[r.sector] + 14} fill={p.tick} style={{ font: "500 10px 'JetBrains Mono'" }}>{head.x.toFixed(2)} / {head.y.toFixed(2)} · {r.tail[0].date}→{head.date}</text>}
           </g>
         );
       })}

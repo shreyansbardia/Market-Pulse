@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid, Legend } from "recharts";
 import { fmt, fmtL } from "../lib/api";
 import { usePalette, tipStyle } from "../lib/store";
-import { Seg, PageHead, Card, Tag, useFetch, Loading, ErrorBox } from "../components/fno";
+import { Seg, PageHead, Card, Tag, useFetch, Loading, ErrorBox, SourceBadge } from "../components/fno";
 
 const TugOfWar = ({ ce, pe }) => {
   const tot = Math.abs(ce) + Math.abs(pe) || 1;
@@ -100,12 +100,15 @@ const History = ({ h }) => {
 const tone = (b) => (b === "Short buildup" || b === "Long unwinding" ? "text-mp-bear" : "text-mp-bull");
 const ptone = (b) => (b === "Short buildup" || b === "Long unwinding" ? "text-mp-bull" : "text-mp-bear");
 
-const StrikeTable = ({ d }) => (
+const StrikeTable = ({ d }) => {
+  const step = d.strikes.length > 1 ? d.strikes[1].strike - d.strikes[0].strike : 0;
+  const near = step ? d.strikes.filter((r) => Math.abs(r.strike - d.spot) <= step * 8) : d.strikes;
+  return (
   <div className="overflow-x-auto scroll-thin" data-testid="oi-strike-table">
     <table className="w-full text-xs">
       <thead><tr className="eyebrow text-left border-b border-mp-border"><th className="py-2">Call action</th><th className="text-right">Call Δ OI</th><th className="text-center">Strike</th><th>Put Δ OI</th><th className="text-right">Put action</th></tr></thead>
       <tbody>
-        {d.strikes.filter((r) => Math.abs(r.strike - d.spot) <= (d.strikes[1].strike - d.strikes[0].strike) * 8).map((r) => (
+        {near.map((r) => (
           <tr key={r.strike} className={`border-b border-mp-border/60 ${r.strike === d.atm ? "bg-mp-accent/10" : ""}`}>
             <td className={`py-1.5 ${r.ce.chg_oi ? tone(r.ce_build) : "text-mp-faint"}`}>{r.ce_build}</td>
             <td className="num text-right">{fmtL(r.ce.chg_oi)}</td>
@@ -117,7 +120,8 @@ const StrikeTable = ({ d }) => (
       </tbody>
     </table>
   </div>
-);
+  );
+};
 
 export default function OIFlow() {
   const [sym, setSym] = useState("NIFTY");
@@ -126,7 +130,7 @@ export default function OIFlow() {
   return (
     <div className="space-y-5" data-testid="oi-flow-page">
       <PageHead eyebrow="Who is adding and exiting positions today · NSE options" title="OI Flow">
-        {d && <span className="font-mono text-[11px] text-mp-faint">NSE as of {d.timestamp} · {d.expiry}</span>}
+        {d && <SourceBadge d={d} />}
       </PageHead>
       <Seg prefix="oiflow-symbol" items={["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY"].map((s) => [s, s])} value={sym} onChange={setSym} />
       {error && <ErrorBox msg={error} />}

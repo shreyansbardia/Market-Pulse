@@ -26,6 +26,7 @@ db = client[os.environ['DB_NAME']]
 
 @asynccontextmanager
 async def lifespan(app):
+    nse._store.update(db=db, loop=asyncio.get_running_loop())
     task = asyncio.create_task(market.run_loop(db))
     yield
     task.cancel()
@@ -97,12 +98,27 @@ async def stock(symbol: str, tf: str = Query("15m")):
     return await market.stock_chart(symbol, tf)
 
 
+UNAVAILABLE_MSG = ("Live option data is temporarily unavailable: NSE and the backup source didn't respond. "
+                   "Please try again in a minute.")
+
+
+async def _chain(symbol, expiry=None):
+    symbol = symbol.upper()
+    try:
+        nse.validate_symbol(symbol, NIFTY200)
+    except nse.BadRequest as e:
+        raise HTTPException(404, str(e))
+    try:
+        return await asyncio.wait_for(asyncio.to_thread(nse.chain, symbol, expiry), timeout=25)
+    except nse.BadRequest as e:
+        raise HTTPException(400 if expiry else 404, str(e))
+    except (nse.Unavailable, asyncio.TimeoutError):
+        raise HTTPException(503, UNAVAILABLE_MSG)
+
+
 @api.get("/options/{symbol}")
 async def options(symbol: str, expiry: str = None):
-    try:
-        return await asyncio.to_thread(nse.chain, symbol, expiry)
-    except Exception as e:
-        raise HTTPException(502, f"NSE option chain unavailable: {e}")
+    return await _chain(symbol, expiry)
 
 
 @api.get("/options-symbols")
@@ -113,10 +129,7 @@ async def options_symbols():
 @api.get("/oi-flow/{symbol}")
 async def oi_flow(symbol: str):
     symbol = symbol.upper()
-    try:
-        ch = await asyncio.to_thread(nse.chain, symbol)
-    except Exception as e:
-        raise HTTPException(502, f"NSE option chain unavailable: {e}")
+    ch = await _chain(symbol)
     builds = {}
     for r in ch["strikes"]:
         for side in ("ce", "pe"):
@@ -164,7 +177,8 @@ async def strength(universe: str = "nifty200"):
     ms = [m for m in a["metrics"].values() if universe != "nifty50" or m["nifty50"]]
     ranked = sorted(ms, key=lambda m: -m["rs_score"])
     slim = lambda m: {k: m[k] for k in ("symbol", "sector", "ltp", "change_pct", "rs_score", "rel", "returns", "radar")}  # noqa: E731
-    return {"sectors": a["sectors"], "strongest": [slim(m) for m in ranked[:15]], "weakest": [slim(m) for m in ranked[::-1][:15]]}
+    return {"sectors": analytics._sector_strength({m["symbol"]: m for m in ms}) if universe == "nifty50" else a["sectors"],
+            "strongest": [slim(m) for m in ranked[:15]], "weakest": [slim(m) for m in ranked[::-1][:15]]}
 
 
 @api.get("/screeners")

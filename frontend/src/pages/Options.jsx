@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ResponsiveContainer, LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid } from "recharts";
 import { fmt, fmtL } from "../lib/api";
 import { usePalette, tipStyle } from "../lib/store";
-import { SymbolBar, PageHead, Card, Tag, useFetch, Loading, ErrorBox } from "../components/fno";
+import { SymbolBar, PageHead, Card, Tag, useFetch, Loading, ErrorBox, SourceBadge } from "../components/fno";
 import { Gauge } from "../components/viz/Gauge";
 import { OIButterfly, WritersRange } from "../components/viz/OptionsViz";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
@@ -58,7 +58,7 @@ export default function Options() {
   return (
     <div className="space-y-5" data-testid="options-page">
       <PageHead eyebrow="Open interest · put-call ratio · IV smile · writers' range · NSE" title="Option Pulse">
-        {d && <span className="font-mono text-[11px] text-mp-faint" data-testid="options-timestamp">NSE as of {d.timestamp}</span>}
+        {d && <SourceBadge d={d} />}
       </PageHead>
       <div className="flex flex-wrap items-center gap-3">
         <SymbolBar value={sym} onChange={change} prefix="options-symbol" />

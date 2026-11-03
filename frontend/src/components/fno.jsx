@@ -63,7 +63,7 @@ export const useFetch = (url, deps = []) => {
     let live = true;
     setState({ data: null, error: null });
     api.get(url).then((r) => live && setState({ data: r.data, error: null }))
-      .catch((e) => live && setState({ data: null, error: e.response?.data?.detail || "Failed to load" }));
+      .catch((e) => live && setState({ data: null, error: typeof e.response?.data?.detail === "string" ? e.response.data.detail : "The data source didn't respond. Please try again in a minute." }));
     return () => { live = false; };
   }, deps); // eslint-disable-line react-hooks/exhaustive-deps
   return state;
@@ -74,5 +74,18 @@ export const Loading = ({ h = 420 }) => (
 );
 
 export const ErrorBox = ({ msg }) => (
-  <div data-testid="error-box" className="panel p-8 text-sm text-mp-bear">{msg}</div>
+  <div data-testid="error-box" className="panel p-8 flex items-start gap-4">
+    <span className="mt-1 w-2.5 h-2.5 rounded-full bg-amber-500 breathe shrink-0" />
+    <div>
+      <div className="font-semibold">Data is taking a breather</div>
+      <div className="text-sm text-mp-muted mt-1">{typeof msg === "string" && !msg.startsWith("<") ? msg : "The data source didn't respond. Please try again in a minute."}</div>
+    </div>
+  </div>
+);
+
+export const SourceBadge = ({ d }) => (
+  <span data-testid="data-source-badge" className="font-mono text-[11px] text-mp-faint flex items-center gap-2">
+    {d.stale && <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600" data-testid="stale-badge">Cached {Math.round(d.age_secs / 60)}m ago</span>}
+    via {d.source} · as of {d.timestamp}
+  </span>
 );

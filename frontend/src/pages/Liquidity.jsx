@@ -18,7 +18,7 @@ const withSlots = (levels, y) => {
   let lastY = -99, slot = 0;
   return sorted.map((L) => {
     const yy = y(L.price);
-    slot = yy - lastY < 18 ? slot + 1 : 0;
+    slot = yy - lastY < 18 ? (slot + 1) % 4 : 0;
     lastY = yy;
     return { ...L, slot };
   });
