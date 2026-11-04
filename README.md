@@ -1,65 +1,86 @@
 <div align="center">
 
-# Market Pulse
+# ◉ Market Pulse
 
-### A live market dashboard for India’s markets
+### Read the market. Find the signal. Follow the flow.
 
-Track market breadth, money flow, technical signals, options activity, and market news across the Nifty 200.
+An open NSE market dashboard that brings breadth, technical setups, options context,
+relative strength, liquidity, and market news into one research workspace.
 
 <br />
 
-**FastAPI** · **React** · **Expo** · **Yahoo Finance** · **NSE / Groww**
+`NIFTY 200` &nbsp;·&nbsp; `10 dashboard views` &nbsp;·&nbsp; `5 signal timeframes` &nbsp;·&nbsp; `No account or database`
 
 </div>
 
 ---
 
-## At a glance
+## The idea
 
-Market Pulse brings market context and stock level analysis into one dashboard. Its pulse view summarizes the session, while dedicated screens help explore signals, options positioning, liquidity, relative strength, screeners, a personal watchlist, and market news.
+Market Pulse is built around a practical question: **what is happening across the market, and where should I look next?** The Pulse view starts with session context. The rest of the dashboard lets a trader move from that context into a signal, stock, option chain, or liquidity level without leaving the workspace.
 
-| Area | What you can explore |
-| --- | --- |
-| **Pulse** | Market mood, breadth, sector rotation, estimated money flow, index cards, volatility, and a turnover weighted sector map |
-| **Signals** | RSI divergence and MACD crossovers across 5m, 15m, 30m, 60m, and daily timeframes |
-| **Options** | Option chain, put/call ratio, implied volatility, max pain, and writers’ range |
-| **OI Flow** | Open interest changes and buildup by strike, with an in-session PCR history |
-| **Liquidity** | A price map of estimated liquidity levels |
-| **Radar & Strength** | Relative rotation and relative strength across stocks and sectors |
-| **Screeners** | Rule based stock groupings for market exploration |
-| **Watchlist** | A browser saved watchlist with quick access to selected stocks |
-| **News** | Public market RSS feeds and stock specific headlines |
+> **A research tool, not a trading system.** Market Pulse does not place orders or provide investment advice. Its price, flow, and positioning views are estimates based on public data.
 
-The dashboard supports light and dark themes, stock detail charts, and keyboard search. It is designed as an analysis aid; it does not place trades.
+## Explore the workspace
 
-## Project layout
+| View | What it helps you inspect |
+| :--- | :--- |
+| **Pulse** | Breadth, market mood, estimated sector money rotation, index context, India VIX, and a turnover weighted market map |
+| **Signals** | RSI divergence and MACD crossovers for 5m, 15m, 30m, 60m, and daily scans |
+| **Options** | Option chain, put/call ratio, open interest, implied volatility, max pain, and writers’ levels |
+| **OI Flow** | Strike by strike open interest changes and the in-session PCR trail for major indices |
+| **Liquidity** | Volume or time-at-price profile, value area, swing levels, and available option OI walls |
+| **Radar** | Relative Rotation Graph (RRG) sector positions and symbol level metrics |
+| **Strength** | Relative strength rankings and sector performance against NIFTY |
+| **Screeners** | Rule based groups for breakouts, moving averages, RSI, volume, gaps, and money flow |
+| **Watchlist** | Browser saved symbols with quote, signal, and stock news context |
+| **Market Wire** | Public market headlines with source filters |
 
-```text
-Market-Pulse/
-├── backend/                 # FastAPI service and market data/analysis logic
-│   ├── server.py            # API routes and application lifecycle
-│   ├── market.py            # Quotes, signal scans, caches, and news
-│   ├── indicators.py        # RSI, MACD, divergence, and chart series
-│   ├── analytics.py         # Relative strength and screener calculations
-│   ├── pulse.py             # Market pulse summary and flow calculations
-│   ├── nse.py               # Option chain source/fallback and analysis
-│   ├── liquidity.py         # Liquidity map calculations
-│   └── universe.py          # Nifty 200, Nifty 50, sectors, and index symbols
-├── frontend/                # React web dashboard
-│   └── src/
-│       ├── pages/            # Pulse, Signals, Options, News, and other views
-│       ├── components/       # Shared UI, charts, header, and stock drawer
-│       └── lib/              # API client and browser state
-├── mobile/                  # Expo / React Native app shell
-├── memory/                  # Product requirements and project notes
-└── test_reports/             # Existing iteration reports
+The web app also includes a per-stock chart drawer, Nifty 200 symbol search (`⌘K` / `Ctrl+K`), an IST market clock, and a light/dark theme switch.
+
+## How the pieces connect
+
+```mermaid
+flowchart LR
+  subgraph Sources[Public market sources]
+    YF[Yahoo Finance<br/>quotes · history · indices]
+    NSE[NSE option chain]
+    GW[Groww fallback]
+  RSS[Public RSS feeds]
+  end
+
+  subgraph Service[FastAPI service]
+    REFRESH[Market refresh loop]
+    CALC[Indicators · analytics<br/>pulse · liquidity]
+    CACHE[(In-memory state and caches)]
+    API[REST API under /api]
+  end
+
+  subgraph App[React dashboard]
+    PULSE[Market context]
+    SCAN[Signals and screeners]
+    DERIV[Options and liquidity]
+    PERSONAL[Watchlist and news]
+  end
+
+  YF --> REFRESH
+  NSE --> CALC
+  GW -. fallback .-> CALC
+  RSS --> API
+  REFRESH --> CALC --> CACHE --> API
+  API --> PULSE
+  API --> SCAN
+  API --> DERIV
+  API --> PERSONAL
 ```
 
-## Run locally
+Quotes, scans, analytics, and option cache are held in process memory and reset when the backend restarts. The browser keeps its own watchlist and theme in `localStorage`. There is no database or sign-in flow.
 
-You’ll need Python 3.10 or newer, Node.js, and Yarn Classic 1.22.22. If `yarn` is not installed on macOS, install the project’s Yarn version with `npm install --global yarn@1.22.22`, then open a new Terminal tab and check it with `yarn --version`. On macOS, run the backend and frontend in separate Terminal tabs. No database is required.
+## Run locally on macOS
 
-### 1. Start the backend
+Run the API and web client in **two Terminal tabs**. You’ll need Python 3.10+, Node.js, and Yarn Classic 1.22.22. Install Yarn if needed with `npm install --global yarn@1.22.22`.
+
+### 1 · Start the API
 
 ```bash
 cd backend
@@ -68,36 +89,34 @@ python3 -m venv .venv
 .venv/bin/python -m uvicorn server:app --reload --host 0.0.0.0 --port 8000
 ```
 
-The API is available at `http://localhost:8000/api`; interactive API docs are at `http://localhost:8000/docs`.
+The API base is `http://localhost:8000/api`. Interactive endpoint docs are at `http://localhost:8000/docs`.
 
-### 2. Start the web dashboard
+### 2 · Start the dashboard
 
-In another terminal, from the repository root:
+In the second tab, from the repository root:
 
 ```bash
 cd frontend
 yarn install
 ```
 
-Set the backend URL in the frontend environment (for example, `frontend/.env`):
+Create `frontend/.env` with the backend address (this local file is ignored by Git):
 
 ```dotenv
 REACT_APP_BACKEND_URL=http://localhost:8000
 ```
 
-Then start the development server:
+Then start the frontend:
 
 ```bash
 yarn start
 ```
 
-The frontend dev server will print its local URL, usually `http://localhost:3000`.
+Restart `yarn start` after changing `.env`. The app usually opens at `http://localhost:3000`. For access from another device, use the Mac’s LAN IP in the frontend URL and set `CORS_ORIGINS` in `backend/.env` to the frontend origin.
 
-For a device or remote browser, set `REACT_APP_BACKEND_URL` to an address reachable from that device. The backend’s `CORS_ORIGINS` setting accepts a comma separated origin list and defaults to `*`.
+### Optional · Expo shell
 
-### Optional: mobile shell
-
-The Expo project lives in `mobile/` and can be started with:
+The `mobile/` directory is an Expo starter shell, not a mobile implementation of the dashboard yet. Its current entry screen displays a static app image and reads `EXPO_PUBLIC_BACKEND_URL`; it does not call the API.
 
 ```bash
 cd mobile
@@ -105,51 +124,62 @@ yarn install
 yarn start
 ```
 
-The current mobile entry screen is a visual app shell, not the full web dashboard. `EXPO_PUBLIC_BACKEND_URL` is read by the app, but the current entry screen does not yet consume the API.
+## Data, estimates, and refresh
 
-## Data and refresh behavior
+| Data | Source and handling |
+| :--- | :--- |
+| Quotes, index history, and intraday bars | Yahoo Finance through `yfinance`; availability and delay are controlled upstream |
+| Options | NSE is primary; Groww is the fallback. A cached response may be returned as stale if both sources fail |
+| News | Public RSS from CNBC-TV18, CNBC, Yahoo Finance, ET Markets, Livemint, and Google News queries for Moneycontrol coverage |
+| Universe | Nifty 200 symbols with Nifty 50 filtering where supported |
+| Refresh | Backend refresh loop sleeps about 3 minutes during market hours or 30 minutes outside market hours after each refresh cycle |
+| Persistence | Market state, option cache, and OI history are process memory; all reset on backend restart |
 
-- **Quotes, indices, and price history:** fetched through `yfinance` from Yahoo Finance. Availability, delays, and intraday history depend on Yahoo Finance.
-- **Options:** NSE is the primary public source, with Groww used as a fallback. If both are unavailable, a recent in-memory cached response may be served and marked stale.
-- **News:** aggregated from public RSS feeds, including CNBC-TV18, CNBC, Yahoo Finance, Moneycontrol via Google News, ET Markets, and Livemint. Feed availability varies.
-- **Universe:** Nifty 200, with Nifty 50 filtering in supported views.
-- **Refresh:** the backend refresh loop runs approximately every 3 minutes during market hours and every 30 minutes when the market is closed. A fresh startup performs an initial scan; data becomes available as upstream requests finish.
-- **Storage:** market data and caches live in process memory. They reset when the backend restarts. The browser watchlist is stored locally in the browser.
+**Money flow is an estimate.** For each stock, turnover is price × volume and the close-location value compares the close with that session’s high/low range. Their product is aggregated by sector. It is a directional price/volume proxy, not exchange-reported institutional flows.
 
-External data providers can rate limit requests or change their feeds and endpoints. A missing or stale value may reflect upstream availability rather than a dashboard calculation.
+Upstream services can rate limit, block, or change endpoints. When that happens, pages may show missing or stale values. Option chain access is available only for supported indices and F&O-enabled Nifty 200 stocks.
 
-## API overview
+## API map
 
-All application endpoints are under `/api`.
+All endpoints are prefixed with `/api`.
 
 | Endpoint | Purpose |
-| --- | --- |
-| `GET /status` | Market status and data refresh timestamps |
-| `GET /universe` | Supported symbols and sectors |
-| `GET /overview` | Market overview and index data |
-| `GET /pulse` | Pulse summary, flow, mood, and visualisation data |
-| `GET /stocks` | Quotes, optionally filtered by universe or symbols |
-| `GET /signals?tf=15m&universe=nifty200` | Technical signal scan |
-| `GET /stock/{symbol}?tf=15m` | Per-stock chart and indicator series |
-| `GET /options/{symbol}?expiry=YYYY-MM-DD` | Option chain and derived statistics |
-| `GET /options-symbols` | Supported option symbols |
-| `GET /oi-flow/{symbol}` | Open interest flow and in-memory history |
-| `GET /liquidity/{symbol}` | Liquidity map data |
-| `GET /radar`, `GET /radar/{symbol}` | Relative rotation data |
-| `GET /strength?universe=nifty200` | Relative strength rankings and sectors |
-| `GET /screeners?universe=nifty200` | Screener results |
-| `GET /news` | Market headlines; optional `source` filter |
-| `GET /news/stocks?symbols=RELIANCE,TCS` | Headlines for selected symbols |
+| :--- | :--- |
+| `GET /status` · `GET /universe` | Market state, refresh times, supported symbols, and sector mapping |
+| `GET /overview` · `GET /pulse` | Index snapshot and composed market context |
+| `GET /stocks?universe=nifty200&symbols=...` | Quotes, optionally scoped by universe or symbol list |
+| `GET /signals?tf=15m&universe=nifty200&only_signals=true` | Technical scans; valid `tf`: `5m`, `15m`, `30m`, `60m`, `1d` |
+| `GET /stock/{symbol}?tf=15m` | Stock quote and chart indicator series |
+| `GET /options/{symbol}?expiry=...` · `GET /options-symbols` | Option chain and supported option symbols |
+| `GET /oi-flow/{symbol}` · `GET /liquidity/{symbol}` | Open-interest history and liquidity map |
+| `GET /radar` · `GET /radar/{symbol}` | Sector RRG and per-symbol radar metrics |
+| `GET /strength?universe=nifty50` · `GET /screeners?universe=nifty200` | Strength rankings and screener groups |
+| `GET /news?source=...` · `GET /news/stocks?symbols=...` | Market headlines and selected-stock headlines |
 
-For query values and response schemas, use the interactive docs at `/docs` while the backend is running.
+See the [full project guide](docs/PROJECT_GUIDE.md) for code ownership, calculation notes, API behavior, and troubleshooting. The [presenter notes](docs/PRESENTATION_NOTES.md) provide a talk track, demo order, and answers to common questions.
 
-## Tech stack
+## Project map
 
-- **Web:** React 19, React Router, Tailwind CSS, Recharts, Axios, and Radix UI components
-- **API:** FastAPI, pandas, NumPy, yfinance, requests, and feedparser
-- **Mobile shell:** Expo, React Native, and Expo Router
-- **Market sources:** Yahoo Finance, NSE public option chain, Groww fallback, and public RSS feeds
+```text
+backend/    FastAPI routes, provider adapters, refresh loop, and calculations
+frontend/   React pages, shared components, charts, API client, local preferences
+mobile/     Expo application shell (dashboard parity is not implemented)
+docs/       Project guide and supporting documentation
+memory/     Product requirements and implementation notes
+```
 
-## Disclaimer
+## Stack
 
-Market Pulse is provided for educational and informational use only. Its indicators, flow estimates, screeners, and visualisations are not financial advice or recommendations to buy or sell securities. Verify data independently before making financial decisions.
+**Web:** React 19 · React Router · Tailwind CSS · Recharts · Axios · Radix UI
+
+**API:** FastAPI · pandas · NumPy · yfinance · requests · feedparser
+
+**Mobile shell:** Expo · React Native · Expo Router
+
+---
+
+<div align="center">
+
+**Market Pulse** · public market data, translated into a clearer research workflow.
+
+</div>
