@@ -38,6 +38,33 @@ Market Pulse is built around a practical question: **what is happening across th
 
 The web app also includes a per-stock chart drawer, Nifty 200 symbol search (`⌘K` / `Ctrl+K`), an IST market clock, and a light/dark theme switch.
 
+## Dashboard screenshots
+
+Explore the dashboard view by view. These desktop screenshots show a live data snapshot; quotes, signals, and headlines change as their providers update.
+
+<table>
+  <tr>
+    <td width="50%"><strong>Pulse</strong> · market context and money flow<br /><a href="docs/screenshots/pulse.png"><img src="docs/screenshots/pulse.png" alt="Market Pulse overview with money rotation, risk meter, and index cards" width="100%" /></a></td>
+    <td width="50%"><strong>Signals</strong> · technical setup scanner<br /><a href="docs/screenshots/signals.png"><img src="docs/screenshots/signals.png" alt="Signals page with timeframe and universe filters and scan results" width="100%" /></a></td>
+  </tr>
+  <tr>
+    <td width="50%"><strong>Options</strong> · option chain context and volatility<br /><a href="docs/screenshots/options.png"><img src="docs/screenshots/options.png" alt="Options page showing PCR, max pain, writers range, and implied volatility" width="100%" /></a></td>
+    <td width="50%"><strong>OI Flow</strong> · changes in open interest<br /><a href="docs/screenshots/oi-flow.png"><img src="docs/screenshots/oi-flow.png" alt="Open interest flow page showing call and put positions added" width="100%" /></a></td>
+  </tr>
+  <tr>
+    <td width="50%"><strong>Liquidity</strong> · volume profile and key levels<br /><a href="docs/screenshots/liquidity.png"><img src="docs/screenshots/liquidity.png" alt="Liquidity page with volume profile and price levels" width="100%" /></a></td>
+    <td width="50%"><strong>Radar</strong> · sector rotation and relative momentum<br /><a href="docs/screenshots/radar.png"><img src="docs/screenshots/radar.png" alt="Radar page showing sector relative rotation" width="100%" /></a></td>
+  </tr>
+  <tr>
+    <td width="50%"><strong>Strength</strong> · relative performance rankings<br /><a href="docs/screenshots/strength.png"><img src="docs/screenshots/strength.png" alt="Strength page ranking symbols and sectors against NIFTY" width="100%" /></a></td>
+    <td width="50%"><strong>Screeners</strong> · rule-based stock groups<br /><a href="docs/screenshots/screeners.png"><img src="docs/screenshots/screeners.png" alt="Screeners page with filters and matching stocks" width="100%" /></a></td>
+  </tr>
+  <tr>
+    <td width="50%"><strong>Watchlist</strong> · saved symbols and their signals<br /><a href="docs/screenshots/watchlist.png"><img src="docs/screenshots/watchlist.png" alt="Watchlist page with saved symbols and market context" width="100%" /></a></td>
+    <td width="50%"><strong>Market Wire</strong> · filtered market headlines<br /><a href="docs/screenshots/news.png"><img src="docs/screenshots/news.png" alt="Market Wire news page with source filters and current headlines" width="100%" /></a></td>
+  </tr>
+</table>
+
 ## How the pieces connect
 
 ```mermaid
