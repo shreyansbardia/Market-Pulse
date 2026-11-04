@@ -6,7 +6,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, APIRouter, HTTPException, Query
-from motor.motor_asyncio import AsyncIOMotorClient
 from starlette.middleware.cors import CORSMiddleware
 
 ROOT_DIR = Path(__file__).parent
@@ -20,17 +19,13 @@ from pulse import build_pulse  # noqa: E402
 from universe import NIFTY200, NIFTY50, SECTOR_OF  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-client = AsyncIOMotorClient(os.environ['MONGO_URL'])
-db = client[os.environ['DB_NAME']]
 
 
 @asynccontextmanager
 async def lifespan(app):
-    nse._store.update(db=db, loop=asyncio.get_running_loop())
-    task = asyncio.create_task(market.run_loop(db))
+    task = asyncio.create_task(market.run_loop())
     yield
     task.cancel()
-    client.close()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -136,7 +131,7 @@ async def oi_flow(symbol: str):
             b = r[f"{side}_build"]
             builds.setdefault(f"{side}:{b}", 0)
             builds[f"{side}:{b}"] += abs(r[side]["chg_oi"])
-    return {"chain": ch, "history": await market.oi_history(db, symbol), "buildup": builds}
+    return {"chain": ch, "history": market.oi_history(symbol), "buildup": builds}
 
 
 @api.get("/liquidity/{symbol}")

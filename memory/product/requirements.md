@@ -37,6 +37,10 @@ Note: Yahoo Finance doesn't provide NSE option chain data, so this needs a free 
 ## Round 4: visual edits on Pulse
 User's edits on the Pulse page: span at line 43 [Pulse_43_42], "not needed this"; span at line 43 [Pulse_43_8], "Not needed". Remove both.
 
+## Round 5: remove MongoDB
+User's words: "Can it be done without it as connecting to MongoDB creates local stuff and I dont want that its okay to not create that snapshots at all"
+Remove all MongoDB use (snapshots, oi_history, option_chains). Keep anything still needed in memory only. The app should run with no database connection. The user accepts that cached data and the PCR trail reset when the server restarts.
+
 ## Integrations
 - Yahoo Finance for market data (no key)
 - News feeds: CNBC, Yahoo Finance news, or other top stock market news sources

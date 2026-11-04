@@ -21,7 +21,6 @@ _sess = {"s": None, "at": 0}
 _state = {"nse_blocked_until": 0}
 _cache = {}
 _slugs = {}
-_store = {"db": None, "loop": None}
 
 
 class Unavailable(Exception):
@@ -239,34 +238,6 @@ def _fetch_live(symbol, expiry):
     raise Unavailable("; ".join(errors))
 
 
-def _persist(key, data):
-    db, loop = _store["db"], _store["loop"]
-    if db is None or loop is None:
-        return
-    import asyncio
-    doc = {"_id": f"{key[0]}|{key[1] or ''}", "data": data, "at": time.time()}
-
-    async def _save():
-        await db.option_chains.replace_one({"_id": doc["_id"]}, doc, upsert=True)
-    asyncio.run_coroutine_threadsafe(_save(), loop)
-
-
-def _load_persisted(key):
-    db, loop = _store["db"], _store["loop"]
-    if db is None or loop is None:
-        return None
-    import asyncio
-
-    async def _load():
-        return await db.option_chains.find_one({"_id": f"{key[0]}|{key[1] or ''}"})
-    fut = asyncio.run_coroutine_threadsafe(_load(), loop)
-    try:
-        doc = fut.result(timeout=3)
-    except Exception:
-        return None
-    return (doc["at"], doc["data"]) if doc else None
-
-
 def validate_symbol(symbol, universe):
     if symbol not in INDEX_SYMBOLS and symbol not in universe:
         raise BadRequest(f"{symbol} is not a supported index or Nifty 200 stock")
@@ -289,13 +260,12 @@ def chain(symbol, expiry=None):
         _cache[key] = (time.time(), data)
         if expiry is None:
             _cache[(symbol, data["expiry"])] = (time.time(), data)
-        _persist(key, data)
         return {**data, "stale": False, "age_secs": 0}
     except BadRequest:
         raise
     except Unavailable as e:
         log.warning("option chain %s %s unavailable: %s", symbol, expiry, e)
-        old = hit or _load_persisted(key)
+        old = hit
         if old:
             _cache.setdefault(key, old)
             return {**old[1], "stale": True, "age_secs": int(time.time() - old[0])}

@@ -21,6 +21,7 @@ Watchlist in localStorage; RSS news (CNBC, Yahoo Finance, Moneycontrol, ET Marke
 - Note: user's attached screenshots were of an unrelated site (Bosscoder); built from the written description.
 
 ## Backlog
+- 2026-11-04 Round 5: MongoDB removed entirely (no motor client, no snapshots/oi_history/option_chains). All caches in memory (market.STATE, nse._cache); PCR trail in STATE["oi_history"] resets on restart (user-accepted). Startup: quotes + 15m signals ready in ~10s.
 - 2026-11-03 fix: NSE blocks server IP (403 Akamai). nse.py now: NSE primary (6s timeout, 15-min cool-down on 403) → Groww public option-chain fallback (IV via Black-Scholes) → cached copy (memory + Mongo option_chains) with stale badge; 404 bad symbol, 400 bad expiry, 503 friendly message (never 502, which Cloudflare replaces). Strength nifty50 sectors filtered; liquidity label slots capped; RRG label de-overlap; OIFlow strike guard.
 - P0 (Round 3): F&O visuals — Option Pulse (OI, PCR, IV smile, writers' range), OI Flow, Liquidity map, Radar, Strength, Screeners. Needs NSE public option-chain source (not on Yahoo).
 - P1: Price alerts on watchlist, hidden divergence, more indicators (Supertrend, VWAP), option pulse / PCR (NSE)

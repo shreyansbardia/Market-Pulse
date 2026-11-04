@@ -33,7 +33,7 @@ NEWS_FEEDS = {
     "Livemint": "https://www.livemint.com/rss/markets",
 }
 
-STATE = {"quotes": {}, "indices": [], "intraday": {}, "analytics": None, "signals": {}, "quotes_at": None, "signals_at": {}, "news": [], "news_at": 0}
+STATE = {"quotes": {}, "indices": [], "intraday": {}, "analytics": None, "oi_history": {}, "signals": {}, "quotes_at": None, "signals_at": {}, "news": [], "news_at": 0}
 _chart_cache = {}
 _stock_news_cache = {}
 
@@ -144,28 +144,23 @@ def _scan(tf):
     return rows
 
 
-async def refresh_quotes(db):
+async def refresh_quotes():
     quotes, indices, intraday, stats = await asyncio.to_thread(_fetch_quotes)
     if stats:
         STATE["analytics"] = stats
-        await db.snapshots.replace_one({"_id": "analytics"}, {"_id": "analytics", **stats}, upsert=True)
     if quotes:
         STATE["quotes"], STATE["indices"], STATE["intraday"] = quotes, indices, intraday
         STATE["quotes_at"] = datetime.now(timezone.utc).isoformat()
-        await db.snapshots.replace_one({"_id": "quotes"}, {"_id": "quotes", "quotes": quotes, "indices": indices,
-                                                            "intraday": intraday, "at": STATE["quotes_at"]}, upsert=True)
 
 
-async def refresh_signals(db, tf):
+async def refresh_signals(tf):
     rows = await asyncio.to_thread(_scan, tf)
     if rows:
         STATE["signals"][tf] = rows
         STATE["signals_at"][tf] = datetime.now(timezone.utc).isoformat()
-        await db.snapshots.replace_one({"_id": f"signals_{tf}"}, {"_id": f"signals_{tf}", "rows": rows,
-                                                                   "at": STATE["signals_at"][tf]}, upsert=True)
 
 
-async def snapshot_oi(db):
+async def snapshot_oi():
     for sym in nse.INDEX_SYMBOLS:
         try:
             ch = await asyncio.to_thread(nse.chain, sym)
@@ -175,41 +170,29 @@ async def snapshot_oi(db):
         if ch.get("stale") or sym not in ("NIFTY", "BANKNIFTY"):
             continue
         ts = ch["timestamp"]
-        await db.oi_history.update_one(
-            {"symbol": sym, "timestamp": ts},
-            {"$set": {"symbol": sym, "timestamp": ts, "session": ts.split(" ")[0], "expiry": ch["expiry"],
-                      "spot": ch["spot"], "pcr": ch["pcr"], "ce_oi": ch["ce_oi"], "pe_oi": ch["pe_oi"],
-                      "ce_chg_oi": ch["ce_chg_oi"], "pe_chg_oi": ch["pe_chg_oi"], "max_pain": ch["max_pain"],
-                      "at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+        session = ts.split(" ")[0]
+        hist = [p for p in STATE["oi_history"].get(sym, []) if p["session"] == session]
+        if not hist or hist[-1]["timestamp"] != ts:
+            hist.append({"symbol": sym, "timestamp": ts, "session": session, "expiry": ch["expiry"],
+                         "spot": ch["spot"], "pcr": ch["pcr"], "ce_oi": ch["ce_oi"], "pe_oi": ch["pe_oi"],
+                         "ce_chg_oi": ch["ce_chg_oi"], "pe_chg_oi": ch["pe_chg_oi"], "max_pain": ch["max_pain"],
+                         "at": datetime.now(timezone.utc).isoformat()})
+        STATE["oi_history"][sym] = hist[-500:]
 
 
-async def oi_history(db, sym):
-    last = await db.oi_history.find_one({"symbol": sym}, {"_id": 0, "session": 1}, sort=[("at", -1)])
-    if not last:
-        return []
-    return await db.oi_history.find({"symbol": sym, "session": last["session"]}, {"_id": 0}).sort("at", 1).to_list(500)
+def oi_history(sym):
+    return STATE["oi_history"].get(sym, [])
 
 
-async def load_snapshots(db):
-    async for doc in db.snapshots.find({}):
-        if doc["_id"] == "quotes":
-            STATE["quotes"], STATE["indices"], STATE["quotes_at"] = doc["quotes"], doc["indices"], doc["at"]
-            STATE["intraday"] = doc.get("intraday", {})
-        elif doc["_id"] == "analytics":
-            STATE["analytics"] = {k: doc[k] for k in ("metrics", "rrg", "sectors")}
-        elif doc["_id"].startswith("signals_"):
-            tf = doc["_id"].split("_", 1)[1]
-            STATE["signals"][tf], STATE["signals_at"][tf] = doc["rows"], doc["at"]
-
-
-async def run_loop(db):
-    await load_snapshots(db)
+async def run_loop():
     while True:
         try:
-            await refresh_quotes(db)
-            await snapshot_oi(db)
+            await refresh_quotes()
+            await refresh_signals("15m")
+            await snapshot_oi()
             for tf in TIMEFRAMES:
-                await refresh_signals(db, tf)
+                if tf != "15m":
+                    await refresh_signals(tf)
         except Exception as e:
             log.exception("refresh failed: %s", e)
         await asyncio.sleep(180 if market_status()["open"] else 1800)
