@@ -57,16 +57,15 @@ Market-Pulse/
 
 ## Run locally
 
-You’ll need Python 3.10+ and Node.js with Yarn. The backend and web frontend run as separate processes. No database is required.
+You’ll need Python 3.10 or newer, Node.js, and Yarn Classic 1.22.22. If `yarn` is not installed on macOS, install the project’s Yarn version with `npm install --global yarn@1.22.22`, then open a new Terminal tab and check it with `yarn --version`. On macOS, run the backend and frontend in separate Terminal tabs. No database is required.
 
 ### 1. Start the backend
 
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate       # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn server:app --reload --host 0.0.0.0 --port 8000
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m uvicorn server:app --reload --host 0.0.0.0 --port 8000
 ```
 
 The API is available at `http://localhost:8000/api`; interactive API docs are at `http://localhost:8000/docs`.
